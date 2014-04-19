@@ -25,8 +25,34 @@
 #define TOMILLIGAUSS 1953L  // For A1301: 2.5mV = 1Gauss, and 1024 analog steps = 5V, so 1 step = 1953mG
 // #define TOMILLIGAUSS 3756L  // For A1302: 1.3mV = 1Gauss, and 1024 analog steps = 5V, so 1 step = 3756mG
 
+//#define THRESHOLD_LOW 50
+#define THRESHOLD_HIGH 100
+
+long prevReading = 0;
+int prevDirection = 0;
+
 void setup() {
   Serial.begin(9600);
+}
+
+void loop() {
+  long reading = getMeasurement();
+  Serial.print(reading);
+  
+  if (abs(reading - prevReading) > 5) {    
+    int direction = getDirection(prevReading, reading);
+    if (direction != 0 && direction != prevDirection
+      && direction < 0 && reading > THRESHOLD_HIGH) {
+      Serial.print("\t!");
+    }
+    
+    prevReading = reading;
+    prevDirection = direction == 0 ? prevDirection : direction;
+  }
+  
+  Serial.println();
+    
+  delay(2);
 }
 
 long getMeasurement() {
@@ -38,8 +64,7 @@ long getMeasurement() {
   return gauss;
 }
 
-void loop() {
-  long reading = getMeasurement();
-  Serial.println(reading);
-  delay(2);
+int getDirection(long prev, long curr) {
+  return curr == prev ? 0 : abs(curr - prev) / (curr - prev);
 }
+
